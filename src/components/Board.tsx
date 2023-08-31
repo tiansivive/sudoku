@@ -7,38 +7,59 @@ import * as A from 'fp-ts/Array'
 import * as F from 'fp-ts/function'
 
 import { useState } from 'react'
+import { isEqual } from "lodash";
 
 type Props = {
-    size: { x: number; y: number };
+    size: Point
 }
 export const Board: React.FC<Props> = ({ size }) => {
 
-    const [grid, setGrid] = useState<Matrix<string>>(initialState(size.x))
+    const [state, setState] = useState<State>({
+        grid: initialGrid(size.x)
+    })
 
 
-    const update = (coords: Props["size"]) => (value: string) => setGrid(prev => {
-        const copy = [...prev]
-        copy[coords.y][coords.x] = value
-        return copy
+    const update = (p: Point) => (value: string) => setState(prev => {
+        const grid = [...prev.grid]
+        grid[p.y][p.x] = value
+        return { ...prev, grid }
+    })
+
+    const select = (p: Point) => () => setState(prev => {
+        if (!prev.selected) return { ...prev, selected: p }
+        if (isEqual(p, prev.selected)) return { ...prev, selected: undefined }
+
+        return { ...prev, selected: p }
     })
 
     return (
         <Grid p="1px" bgColor="indigo" templateColumns={ `repeat(${size.x}, 1fr)` } gap="1px">
             {
-                grid.flatMap((row, y) =>
+                state.grid.flatMap((row, y) =>
                     row.map((col, x) =>
-                        <Cell value={ col } update={ update({ x, y }) } />
+                        <Cell
+                            value={ col }
+                            update={ update({ x, y }) }
+                            select={ select({ x, y }) }
+                            selected={ isEqual(state.selected, { x, y }) }
+                        />
                     )
                 )
             }
-
         </Grid>
     )
 }
 
-type Matrix<T> = T[][]
 
-const initialState = (size: number) => F.pipe(
+type State = {
+    grid: Matrix<string>,
+    selected?: Point
+}
+
+
+type Matrix<T> = T[][]
+type Point = { x: number; y: number };
+const initialGrid = (size: number) => F.pipe(
     A.replicate(size * size, ""),
     A.chunksOf(size)
 )
