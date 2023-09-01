@@ -20,3 +20,14 @@ export const valid = <T>(eq: Eq<T>, monoid: Monoid<T>) => (grid: Matrix<T>, regi
 }
 
 
+
+
+
+export const solved = <T>(eq: Eq<T>, monoid: Monoid<T>) => (grid: Matrix<T>, regions: Region[]): boolean => {
+    const _valid = valid(eq, monoid)(grid, regions)
+    return grid.reduce(
+        (res, row, y) => res && row.reduce(
+            (res, val, x) => res && val !== monoid.empty && _valid({ x, y })
+            , true)
+        , true)
+}
