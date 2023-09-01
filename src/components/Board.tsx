@@ -7,7 +7,7 @@ import * as A from 'fp-ts/Array'
 import * as F from 'fp-ts/function'
 
 import { useEffect, useMemo, useState } from 'react'
-import { isEqual } from "lodash";
+import { isEqual, last } from "lodash";
 import { Matrix, Point, Region, point } from "../shared/grid";
 import * as Validation from "../sudoku/validation";
 import * as Str from "fp-ts/lib/string";
@@ -27,7 +27,7 @@ export const Board: React.FC<Props> = ({ size }) => {
 
     const update = (p: Point) => (value: string) => setState(prev => {
         const grid = [...prev.grid]
-        grid[p.y][p.x] = value
+        grid[p.y][p.x] = last(value.split("")) || ""
         return { ...prev, grid }
     })
 
