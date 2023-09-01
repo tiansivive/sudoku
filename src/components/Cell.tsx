@@ -1,10 +1,13 @@
 import { GridItem, Input } from "@chakra-ui/react"
 import { CSSProperties } from "react"
+import { Point } from "../shared/grid"
+import { REGION_SIDE_SIZE } from "./Board"
 
 
 
 type Props = {
     value: string,
+    point: Point,
     update: (val: string) => void,
     select: () => void,
     selected?: boolean,
@@ -12,15 +15,19 @@ type Props = {
     inLineOfSight?: boolean
 }
 
-export const Cell: React.FC<Props> = ({ value, update, select, selected, invalid, inLineOfSight }) => {
+export const Cell: React.FC<Props> = ({ value, point, update, select, selected, invalid, inLineOfSight }) => {
+
+
     return (
         <GridItem
+            gridColumnStart={ point.x * 2 + 1 }
+            gridRowStart={ point.y * 2 + 1 }
             bgColor={ bgColor({ selected, invalid, inLineOfSight }) }
             display="flex"
             alignItems="center"
             justifyContent="center"
-            h="5vw"
-            w="5vw"
+            h="64px"
+            w="64px"
             onClick={ select }
             cursor="pointer"
         >
@@ -46,3 +53,4 @@ const bgColor = (props: Pick<Props, "invalid" | "selected" | "inLineOfSight">): 
 
     return "lavender"
 }
+
