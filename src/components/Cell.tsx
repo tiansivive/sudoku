@@ -1,4 +1,5 @@
 import { GridItem, Input } from "@chakra-ui/react"
+import { CSSProperties } from "react"
 
 
 
@@ -6,13 +7,15 @@ type Props = {
     value: string,
     update: (val: string) => void,
     select: () => void,
-    selected?: boolean
+    selected?: boolean,
+    invalid?: boolean,
+    inLineOfSight?: boolean
 }
 
-export const Cell: React.FC<Props> = ({ value, update, select, selected }) => {
+export const Cell: React.FC<Props> = ({ value, update, select, selected, invalid, inLineOfSight }) => {
     return (
         <GridItem
-            bgColor={ selected ? "violet" : "lavender" }
+            bgColor={ bgColor({ selected, invalid, inLineOfSight }) }
             display="flex"
             alignItems="center"
             justifyContent="center"
@@ -33,4 +36,13 @@ export const Cell: React.FC<Props> = ({ value, update, select, selected }) => {
             />
         </GridItem>
     )
+}
+
+
+const bgColor = (props: Pick<Props, "invalid" | "selected" | "inLineOfSight">): CSSProperties["backgroundColor"] => {
+    if (props.invalid) return "coral"
+    if (props.selected) return "violet"
+    if (props.inLineOfSight) return "plum"
+
+    return "lavender"
 }
