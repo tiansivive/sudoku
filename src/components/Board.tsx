@@ -58,7 +58,7 @@ export const Board: React.FC<Props> = ({ size }) => {
                             value={ col }
                             update={ update({ x, y }) }
                             select={ select({ x, y }) }
-                            selected={ isEqual(state.selected, { x, y }) }
+                            selected={ selected(state)({ x, y }) }
                             invalid={ !valid(state.grid, _regions)({ x, y }) }
                             inLineOfSight={ inLineOfSight(lineOfSight)({ x, y }) }
                         />
@@ -107,3 +107,16 @@ const valid = Validation.valid(Str.Eq, Str.Monoid)
 const includes = A.elem(point.Eq)
 const inLineOfSight = ({ row, col, region }: LineOfSight) => (p: Point) =>
     includes(p, col) || includes(p, row) || includes(p, region)
+
+const selected = ({ selected, grid }: State) => (p: Point) => {
+    if (!selected) return false
+    if (point.Eq.equals(selected, p)) return true
+
+    const selectedVal = grid[selected.y][selected.x]
+    const currentVal = grid[p.y][p.x]
+
+    if (currentVal === "") return false
+
+    return selectedVal === currentVal
+
+}
