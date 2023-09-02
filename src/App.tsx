@@ -1,15 +1,17 @@
 
 import './App.css'
 import { ChakraProvider } from '@chakra-ui/react'
-import { Board } from './components/Board'
+import { Board } from 'components/Board'
+import { SudokuProvider } from 'shared/sudoku-context'
 
 
 function App() {
 
   return (
     <ChakraProvider>
-
-      <Board size={ { x: SIZE, y: SIZE } } />
+      <SudokuProvider>
+        <Board size={ { x: SIZE, y: SIZE } } />
+      </SudokuProvider>
 
     </ChakraProvider>
   )

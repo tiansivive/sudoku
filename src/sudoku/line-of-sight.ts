@@ -1,5 +1,5 @@
 
-import { Matrix, Point, Region, point } from "../shared/grid";
+import { Matrix, Point, Region, point } from "shared/grid";
 
 import * as A from 'fp-ts/Array'
 

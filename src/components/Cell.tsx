@@ -1,9 +1,12 @@
 import { GridItem, Input } from "@chakra-ui/react"
 import { CSSProperties, useEffect, useRef } from "react"
-import { Point } from "../shared/grid"
+import { Point } from "shared/grid"
 
 import styles from './cell.module.css'
 import { match } from "ts-pattern"
+
+
+
 
 type Props = {
     value: string,
@@ -41,7 +44,7 @@ export const Cell: React.FC<Props> = ({ value, point, update, move, active, sele
                 className={ styles.noCaret }
                 cursor="pointer"
 
-                color="mediumpurple"
+                color={ invalid ? "crimson" : active ? "lightpink" : "darkslateblue" }
                 fontSize="5xl"
                 variant='unstyled'
                 value={ value }
@@ -58,7 +61,7 @@ export const Cell: React.FC<Props> = ({ value, point, update, move, active, sele
 
 const bgColor = (props: Pick<Props, "active" | "invalid" | "selected" | "inLineOfSight">): CSSProperties["backgroundColor"] => {
     if (props.active) return "purple"
-    if (props.invalid) return "coral"
+    if (props.invalid) return "darksalmon"
     if (props.selected) return "violet"
     if (props.inLineOfSight) return "plum"
 

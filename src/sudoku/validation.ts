@@ -1,5 +1,5 @@
 import { Eq } from "fp-ts/lib/Eq";
-import { Matrix, Point, Region } from "../shared/grid";
+import { Matrix, Point, Region } from "shared/grid";
 
 import { Monoid } from "fp-ts/lib/Monoid";
 import { vision } from "./line-of-sight";
