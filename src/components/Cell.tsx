@@ -1,9 +1,10 @@
 import { GridItem, Input } from "@chakra-ui/react"
-import { CSSProperties, useEffect, useRef } from "react"
+import { CSSProperties, useContext, useEffect, useRef } from "react"
 import { Point } from "shared/grid"
 
 import styles from './cell.module.css'
 import { match } from "ts-pattern"
+import { SudokuContext } from "shared/sudoku-context"
 
 
 
@@ -22,11 +23,14 @@ type Props = {
 
 
 export const Cell: React.FC<Props> = ({ value, point, update, move, active, select, selected, invalid, inLineOfSight }) => {
+
+
+    const context = useContext(SudokuContext)
     const ref = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
         if (active) ref.current?.focus()
-    }, [active])
+    }, [active, context.mode])
     return (
         <GridItem
             gridColumnStart={ point.x * 2 + 1 }
@@ -40,20 +44,37 @@ export const Cell: React.FC<Props> = ({ value, point, update, move, active, sele
             onClick={ select }
             cursor="pointer"
         >
-            <Input
-                className={ styles.noCaret }
-                cursor="pointer"
+            { match(context.mode)
+                .with("candidates", () =>
+                    <Input
+                        className={ styles.noCaret }
+                        cursor="pointer"
+                        color="darkslateblue"
+                        fontSize="lg"
+                        variant='unstyled'
+                        value={ value }
+                        textAlign="center"
+                        onChange={ e => update(e.target.value) }
+                        ref={ ref }
+                        onKeyDown={ direction(move) }
 
-                color={ invalid ? "crimson" : active ? "lightpink" : "darkslateblue" }
-                fontSize="5xl"
-                variant='unstyled'
-                value={ value }
-                textAlign="center"
-                onChange={ e => update(e.target.value) }
-                ref={ ref }
-                onKeyDown={ direction(move) }
+                    />)
+                .otherwise(() =>
+                    <Input
+                        className={ styles.noCaret }
+                        cursor="pointer"
 
-            />
+                        color={ invalid ? "crimson" : active ? "lightpink" : "darkslateblue" }
+                        fontSize="5xl"
+                        variant='unstyled'
+                        value={ value }
+                        textAlign="center"
+                        onChange={ e => update(e.target.value) }
+                        ref={ ref }
+                        onKeyDown={ direction(move) }
+
+                    />)
+            }
         </GridItem>
     )
 }

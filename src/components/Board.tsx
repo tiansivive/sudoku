@@ -1,4 +1,4 @@
-import { Box, Grid, Spinner, useToast } from "@chakra-ui/react";
+import { Box, Grid, Radio, RadioGroup, Spinner, Stack, useToast } from "@chakra-ui/react";
 
 
 import { Cell } from "./Cell";
@@ -8,13 +8,13 @@ import * as F from 'fp-ts/function'
 
 import { useContext, useEffect } from 'react'
 
-import { Matrix, Point, point } from "shared/grid";
+import { Point, point } from "shared/grid";
 import * as Validation from "sudoku/validation";
 import * as Str from "fp-ts/lib/string";
 
 import { LineOfSight } from "sudoku/line-of-sight";
 
-import { SudokuContext } from "shared/sudoku-context";
+import { State, SudokuContext } from "shared/sudoku-context";
 
 type Props = {
     size: Point
@@ -57,7 +57,15 @@ export const Board: React.FC<Props> = ({ size }) => {
                 )
             }
         </Grid>
+        <RadioGroup onChange={ (payload: State["mode"]) => context.dispatch({ type: "MODE.SET", payload }) } value={ context.mode }>
+            <Stack direction='row'>
+                <Radio value="value">Value</Radio>
+                <Radio value="notes">Notes</Radio>
+                <Radio value="candidates">Candidates</Radio>
+            </Stack>
+        </RadioGroup>
         { context.status === "fetching" && <Spinner size="xl" /> }
+
 
     </Box>
     )
@@ -77,10 +85,6 @@ const template = (size: number) =>
         A.intercalate(Str.Monoid)(" ")
     )
 
-type State = {
-    grid: Matrix<string>,
-    selected?: Point
-}
 
 export const REGION_SIDE_SIZE = 3
 
