@@ -1,5 +1,5 @@
 import { Reducer, createContext, useEffect, useMemo, useReducer } from "react";
-import { Matrix, Point, Region } from "./grid";
+import { type Matrix, Point, Region, Matrix as M, type Value } from "./grid";
 import * as A from 'fp-ts/Array'
 import * as F from 'fp-ts/function'
 import { DEFAULT_GRID_SIZE } from "./settings";
@@ -59,8 +59,8 @@ export const SudokuProvider: React.FC<Props> = ({ children }) => {
         fetch("https://sudoku-api.vercel.app/api/dosuku?query={newboard(limit:1){grids{value}}}")
             .then(res => res.json())
             .then(res => res.newboard.grids[0].value)
-            .then(grid => grid.map((row: number[]) => row.map((e: number) => e === 0 ? "" : e.toString())))
-            .then(grid => dispatch({ type: "GRID.SET", payload: { status: "ok", grid } }))
+            .then((grid): Matrix<string> => grid.map((row: number[]) => row.map((e: number) => e === 0 ? "" : e.toString())))
+            .then(grid => dispatch({ type: "GRID.INITIALIZE", payload: grid }))
     }, [])
 
     return <SudokuContext.Provider value={ {
@@ -77,15 +77,17 @@ export const SudokuProvider: React.FC<Props> = ({ children }) => {
 export type State = {
     status: "mount" | "fetching" | "ok",
     mode: "value" | "notes" | "candidates" | "coloring"
-    grid: Matrix<string>,
+    grid: Matrix<Value>,
     size: Point,
     selected?: Point
 }
 
+
 type Actions = {
     "FETCH": void
     "MODE.SET": State["mode"]
-    "GRID.SET": { status: State["status"], grid: Matrix<string> }
+    "GRID.INITIALIZE": Matrix<string>;
+    "GRID.SET": { status: State["status"], grid: Matrix<Value> }
     "CELL.UPDATE": { value: string, coords: Point }
     "CELL.SELECT": Point,
     "CELL.HIGHLIGHT": Point,
@@ -95,7 +97,6 @@ type Actions = {
 type ActionMap = {
     [K in keyof Actions]: { type: K, payload: Actions[K] }
 }
-
 type Action = ActionMap[keyof Actions]
 type GetAction<K extends keyof Actions> = ActionMap[K]
 
@@ -106,6 +107,9 @@ const reducer
     = (state, action) => match(action)
         .with({ type: "FETCH" }, () => set(state, "status", "fetching"))
         .with({ type: "GRID.SET" }, ({ payload }) => assign(state, payload))
+        .with({ type: "GRID.INITIALIZE" }, ({ payload }) =>
+            set(state, "grid", M.Functor.map(payload, value =>
+                ({ value, candidates: [], notes: [] }))))
         .with({ type: "MODE.SET" }, ({ payload }) => set(state, "mode", payload))
         .with({ type: "CELL.UPDATE" }, update(state))
         .with({ type: "CELL.SELECT" }, select(state))
@@ -116,8 +120,8 @@ const reducer
 const update: StateUpdater<State, "CELL.UPDATE"> = state => ({ payload: { coords, value } }) => {
 
     return match(state.mode)
-        .with("value", () => fp.set(`grid[${coords.y}][${coords.x}]`, prune(value), state))
-        .with("candidates", () => fp.update(`grid[${coords.y}][${coords.x}]`, current => toggle(current, value), state))
+        .with("value", () => fp.set(`grid[${coords.y}][${coords.x}].value`, prune(value), state))
+        .with("candidates", () => fp.update(`grid[${coords.y}][${coords.x}].candidates`, (current: string[]) => toggle(current, value), state))
         .otherwise(() => state)
 
 }
@@ -151,18 +155,28 @@ const next = (p: Point, direction: Direction, size: Point): Point => {
 }
 
 const prune = (value: string) => last(value.trim().split("")) || ""
-const toggle = (state: string, value: string) => {
-    const v = prune(value)
-    if (v === "") return state
+const toggle = (state: string[], value: string): string[] => {
 
-    const index = state.indexOf(prune(value))
-    if (index === -1) return (state + value).split("").sort(string.Ord.compare).join("")
-    return state.split("").splice(index, 1).join("")
+    console.log("toggle")
+    console.log("value:", value)
+    console.log("pruned", prune(value))
+    return match(prune(value))
+        .with("", () => state)
+        .when(v => state.indexOf(v) === -1, v => state.concat(v).sort(string.Ord.compare))
+        .otherwise(v => {
+            console.log("otherwise:", v)
+            console.log("index:", state.indexOf(v))
+            console.log("spliced:", A.unsafeDeleteAt(state.indexOf(v), state))
+            return A.unsafeDeleteAt(state.indexOf(v), state)
+        })
 }
 
 
+
+
+
 const initialGrid = (size: number) => F.pipe(
-    A.replicate(size * size, ""),
+    A.replicate<Value>(size * size, { value: "", candidates: [], notes: [] }),
     A.chunksOf(size)
 )
 

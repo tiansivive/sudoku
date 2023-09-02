@@ -1,6 +1,6 @@
 import { GridItem, Input } from "@chakra-ui/react"
 import { CSSProperties, useContext, useEffect, useRef } from "react"
-import { Point } from "shared/grid"
+import { Point, Value } from "shared/grid"
 
 import styles from './cell.module.css'
 import { match } from "ts-pattern"
@@ -10,7 +10,7 @@ import { SudokuContext } from "shared/sudoku-context"
 
 
 type Props = {
-    value: string,
+    value: Value,
     point: Point,
     update: (val: string) => void,
     select: () => void,
@@ -44,15 +44,15 @@ export const Cell: React.FC<Props> = ({ value, point, update, move, active, sele
             onClick={ select }
             cursor="pointer"
         >
-            { match(context.mode)
-                .with("candidates", () =>
+            { match(value.value)
+                .with("", () =>
                     <Input
                         className={ styles.noCaret }
                         cursor="pointer"
-                        color="darkslateblue"
+                        color={ active ? "lightpink" : "darkslateblue" }
                         fontSize="lg"
                         variant='unstyled'
-                        value={ value }
+                        value={ value.candidates.join("") }
                         textAlign="center"
                         onChange={ e => update(e.target.value) }
                         ref={ ref }
@@ -67,7 +67,7 @@ export const Cell: React.FC<Props> = ({ value, point, update, move, active, sele
                         color={ invalid ? "crimson" : active ? "lightpink" : "darkslateblue" }
                         fontSize="5xl"
                         variant='unstyled'
-                        value={ value }
+                        value={ value.value }
                         textAlign="center"
                         onChange={ e => update(e.target.value) }
                         ref={ ref }

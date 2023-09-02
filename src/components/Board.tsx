@@ -8,7 +8,7 @@ import * as F from 'fp-ts/function'
 
 import { useContext, useEffect } from 'react'
 
-import { Point, point } from "shared/grid";
+import { Point, point, Value as V } from "shared/grid";
 import * as Validation from "sudoku/validation";
 import * as Str from "fp-ts/lib/string";
 
@@ -25,6 +25,7 @@ export const Board: React.FC<Props> = ({ size }) => {
 
     const toast = useToast()
     useEffect(() => {
+
         if (solved(context.grid, context.regions)) toast({
             title: 'Solved!',
             status: 'success',
@@ -88,8 +89,8 @@ const template = (size: number) =>
 
 export const REGION_SIDE_SIZE = 3
 
-const valid = Validation.valid(Str.Eq, Str.Monoid)
-const solved = Validation.solved(Str.Eq, Str.Monoid)
+const valid = Validation.valid(V.Eq, V.Monoid)
+const solved = Validation.solved(V.Eq, V.Monoid)
 
 const includes = A.elem(point.Eq)
 const inLineOfSight = ({ row, col, region }: LineOfSight) => (p: Point) =>
@@ -102,9 +103,9 @@ const selected = ({ selected, grid }: State) => (p: Point) => {
     const selectedVal = grid[selected.y][selected.x]
     const currentVal = grid[p.y][p.x]
 
-    if (currentVal === "") return false
+    if (currentVal.value === "") return false
 
-    return selectedVal === currentVal
+    return V.Eq.equals(selectedVal, currentVal)
 }
 
 const active = (p: Point, selected: Point | undefined) => selected && point.Eq.equals(p, selected)
