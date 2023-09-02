@@ -38,9 +38,11 @@ export const Matrix
 
 
 export type Value = {
+    locked?: boolean,
     value: string,
     candidates: string[],
-    notes: string[]
+    notes: string[],
+    colors: string[]
 }
 
 export const Value
@@ -48,11 +50,12 @@ export const Value
     = {
     Eq: contramap<string, Value>(v => v.value)(string.Eq),
     Monoid: {
-        empty: { value: "", candidates: [], notes: [] },
+        empty: { value: "", candidates: [], notes: [], colors: [] },
         concat: (a, b) => ({
             value: a.value + b.value,
             candidates: a.candidates.concat(b.candidates),
-            notes: a.notes.concat(b.notes)
+            notes: a.notes.concat(b.notes),
+            colors: a.colors.concat(b.colors)
         })
 
     }

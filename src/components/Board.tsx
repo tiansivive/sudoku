@@ -1,4 +1,4 @@
-import { Box, Grid, Radio, RadioGroup, Spinner, Stack, useToast } from "@chakra-ui/react";
+import { Box, Grid, GridItem, Radio, RadioGroup, Spinner, Stack, useToast } from "@chakra-ui/react";
 
 
 import { Cell } from "./Cell";
@@ -65,6 +65,20 @@ export const Board: React.FC<Props> = ({ size }) => {
                 <Radio value="candidates">Candidates</Radio>
             </Stack>
         </RadioGroup>
+        <Grid p="1px" bgColor="indigo" templateColumns={ template(colorbar.length) } templateRows="1fr">
+            {
+                colorbar.map((color, i) =>
+                    <GridItem
+                        gridColumnStart={ i * 2 + 1 }
+                        bgColor={ color }
+                        h="64px"
+                        w="64px"
+                        onClick={ () => context.dispatch({ type: "COLOR.SELECT", payload: color }) }
+                        cursor="pointer">
+
+                    </GridItem>)
+            }
+        </Grid>
         { context.status === "fetching" && <Spinner size="xl" /> }
 
 
@@ -72,6 +86,7 @@ export const Board: React.FC<Props> = ({ size }) => {
     )
 }
 
+const colorbar = ["lavender", "red.200", "orange.200", "yellow.200", "green.200", "cyan.200", "blue.200", "purple.200", "gray.300"]
 
 const template = (size: number) =>
     F.pipe(

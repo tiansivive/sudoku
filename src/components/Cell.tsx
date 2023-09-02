@@ -35,7 +35,9 @@ export const Cell: React.FC<Props> = ({ value, point, update, move, active, sele
         <GridItem
             gridColumnStart={ point.x * 2 + 1 }
             gridRowStart={ point.y * 2 + 1 }
-            bgColor={ bgColor({ selected, invalid, inLineOfSight, active }) }
+            border={ active ? "3px solid" : "none" }
+            borderColor={ active ? "lightpink" : "purple.500" }
+            bgColor={ value.colors[0] || bgColor({ selected, invalid, inLineOfSight, active }) }
             display="flex"
             alignItems="center"
             justifyContent="center"
@@ -49,7 +51,7 @@ export const Cell: React.FC<Props> = ({ value, point, update, move, active, sele
                     <Input
                         className={ styles.noCaret }
                         cursor="pointer"
-                        color={ active ? "lightpink" : "darkslateblue" }
+                        color={ active ? "lightpink" : "purple.500" }
                         fontSize="lg"
                         variant='unstyled'
                         value={ value.candidates.join("") }
@@ -64,7 +66,7 @@ export const Cell: React.FC<Props> = ({ value, point, update, move, active, sele
                         className={ styles.noCaret }
                         cursor="pointer"
 
-                        color={ invalid ? "crimson" : active ? "lightpink" : "darkslateblue" }
+                        color={ textColor({ active, invalid, locked: value.locked }) }
                         fontSize="5xl"
                         variant='unstyled'
                         value={ value.value }
@@ -89,6 +91,11 @@ const bgColor = (props: Pick<Props, "active" | "invalid" | "selected" | "inLineO
     return "lavender"
 }
 
+const textColor = (opts: Pick<Props, "active" | "invalid"> & { locked?: boolean }) => match(opts)
+    .with({ invalid: true }, () => "crimson")
+    .with({ active: true }, () => "lightpink")
+    .with({ locked: true }, () => "darkslateblue")
+    .otherwise(() => "purple.500")
 
 const direction = (move: Props["move"]) => (e: React.KeyboardEvent<HTMLInputElement>) =>
     match(e.key)

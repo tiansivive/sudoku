@@ -59,7 +59,7 @@ export const SudokuProvider: React.FC<Props> = ({ children }) => {
         fetch("https://sudoku-api.vercel.app/api/dosuku?query={newboard(limit:1){grids{value}}}")
             .then(res => res.json())
             .then(res => res.newboard.grids[0].value)
-            .then((grid): Matrix<string> => grid.map((row: number[]) => row.map((e: number) => e === 0 ? "" : e.toString())))
+            .then(grid => M.Functor.map(grid, (n: number) => n === 0 ? "" : n.toString()))
             .then(grid => dispatch({ type: "GRID.INITIALIZE", payload: grid }))
     }, [])
 
@@ -79,7 +79,8 @@ export type State = {
     mode: "value" | "notes" | "candidates" | "coloring"
     grid: Matrix<Value>,
     size: Point,
-    selected?: Point
+    color?: string,
+    selected?: Point,
 }
 
 
@@ -91,6 +92,7 @@ type Actions = {
     "CELL.UPDATE": { value: string, coords: Point }
     "CELL.SELECT": Point,
     "CELL.HIGHLIGHT": Point,
+    "COLOR.SELECT": string,
     "MOVE": { coords: Point, direction: Direction }
 }
 
@@ -109,32 +111,43 @@ const reducer
         .with({ type: "GRID.SET" }, ({ payload }) => assign(state, payload))
         .with({ type: "GRID.INITIALIZE" }, ({ payload }) =>
             set(state, "grid", M.Functor.map(payload, value =>
-                ({ value, candidates: [], notes: [] }))))
+                ({ value, candidates: [], notes: [], colors: [], locked: value !== "" }))))
         .with({ type: "MODE.SET" }, ({ payload }) => set(state, "mode", payload))
         .with({ type: "CELL.UPDATE" }, update(state))
         .with({ type: "CELL.SELECT" }, select(state))
+        .with({ type: "COLOR.SELECT" }, ({ payload }) => set(state, "color", payload))
         .with({ type: "MOVE" }, ({ payload: { coords, direction } }) => set(state, "selected", next(coords, direction, state.size)))
         .otherwise(() => state)
 
 
-const update: StateUpdater<State, "CELL.UPDATE"> = state => ({ payload: { coords, value } }) => {
-
-    return match(state.mode)
+const update: StateUpdater<State, "CELL.UPDATE"> = state => ({ payload: { coords, value } }) =>
+    match(state.mode)
+        .when(() => Boolean(state.grid[coords.y][coords.x].locked), () => state)
         .with("value", () => fp.set(`grid[${coords.y}][${coords.x}].value`, prune(value), state))
         .with("candidates", () => fp.update(`grid[${coords.y}][${coords.x}].candidates`, (current: string[]) => toggle(current, value), state))
         .otherwise(() => state)
 
-}
+
 
 
 const select
     : StateUpdater<State, "CELL.SELECT">
     = state => ({ payload }) => {
+        return match(state)
+            .with({ selected: undefined, color: undefined }, () => set(state, "selected", payload))
+            .when(({ selected, color }) => !selected && Boolean(color), () => F.pipe(
+                state,
+                set("selected", payload),
+                fp.set(`grid[${payload.y}][${payload.x}].colors`, [state.color])
+            ) as State)
+            .when(({ selected, color }) => selected && isEqual(payload, selected) && Boolean(color), () => F.pipe(
+                state,
+                set("selected", undefined),
+                fp.set(`grid[${payload.y}][${payload.x}].colors`, [state.color])
+            ) as State)
+            .otherwise(() => set(state, "selected", payload))
 
-        if (!state.selected) return set(state, "selected", payload)
-        if (isEqual(payload, state.selected)) return set(state, "selected", undefined)
 
-        return set(state, "selected", payload)
     }
 
 
@@ -155,28 +168,19 @@ const next = (p: Point, direction: Direction, size: Point): Point => {
 }
 
 const prune = (value: string) => last(value.trim().split("")) || ""
-const toggle = (state: string[], value: string): string[] => {
-
-    console.log("toggle")
-    console.log("value:", value)
-    console.log("pruned", prune(value))
-    return match(prune(value))
+const toggle = (state: string[], value: string): string[] =>
+    match(prune(value))
         .with("", () => state)
         .when(v => state.indexOf(v) === -1, v => state.concat(v).sort(string.Ord.compare))
-        .otherwise(v => {
-            console.log("otherwise:", v)
-            console.log("index:", state.indexOf(v))
-            console.log("spliced:", A.unsafeDeleteAt(state.indexOf(v), state))
-            return A.unsafeDeleteAt(state.indexOf(v), state)
-        })
-}
+        .otherwise(v => A.unsafeDeleteAt(state.indexOf(v), state))
+
 
 
 
 
 
 const initialGrid = (size: number) => F.pipe(
-    A.replicate<Value>(size * size, { value: "", candidates: [], notes: [] }),
+    A.replicate<Value>(size * size, { value: "", candidates: [], notes: [], colors: [] }),
     A.chunksOf(size)
 )
 
