@@ -1,4 +1,4 @@
-import { Box, Grid, GridItem, Radio, RadioGroup, Spinner, Stack, useToast } from "@chakra-ui/react";
+import { Box, Button, Grid, GridItem, Radio, RadioGroup, Spinner, Stack, useToast } from "@chakra-ui/react";
 
 
 import { Cell } from "./Cell";
@@ -86,6 +86,8 @@ export const Board: React.FC<Props> = ({ size }) => {
                     </GridItem>)
             }
         </Grid>
+        <Button disabled={ !context.undo } onClick={ () => context.dispatch({ type: "UNDO", payload: undefined }) }>UNDO</Button>
+        <Button disabled={ !context.redo } onClick={ () => context.dispatch({ type: "REDO", payload: undefined }) }>REDO</Button>
         { context.status === "fetching" && <Spinner size="xl" /> }
 
 

@@ -30,7 +30,7 @@ export const SudokuContext = createContext<Context>({
     regions: [],
     selected: [],
     dispatch: () => { },
-    styles: { selection: "solid" }
+    styles: { selection: "solid" },
 
 })
 
@@ -47,7 +47,7 @@ export const SudokuProvider: React.FC<Props> = ({ children }) => {
         grid: initialGrid(DEFAULT_GRID_SIZE.x),
         size: DEFAULT_GRID_SIZE,
         selected: [],
-        styles: { selection: "solid" }
+        styles: { selection: "solid" },
     })
 
 
@@ -88,7 +88,9 @@ export type State = {
     color?: string,
     styles: {
         selection: "solid" | "border"
-    }
+    },
+    undo?: State
+    redo?: State
 }
 
 
@@ -103,7 +105,9 @@ type Actions = {
     "CELL.HIGHLIGHT": Point,
     "COLOR.SELECT": string,
     "MOVE": { coords: Point, direction: Direction }
-    "CONFIG.STYLES.SELECTION": State["styles"]["selection"]
+    "CONFIG.STYLES.SELECTION": State["styles"]["selection"],
+    "UNDO": undefined
+    "REDO": undefined
 }
 
 type ActionMap = {
@@ -116,20 +120,37 @@ type StateUpdater<S, K extends keyof ActionMap> = (state: S) => (action: GetActi
 
 const reducer
     : Reducer<State, Action>
-    = (state, action) => match(action)
-        .with({ type: "FETCH" }, () => set(state, "status", "fetching"))
-        .with({ type: "GRID.SET" }, ({ payload }) => assign(state, payload))
-        .with({ type: "GRID.INITIALIZE" }, ({ payload }) =>
-            set(state, "grid", M.Functor.map(payload, value =>
-                ({ value, candidates: [], notes: [], colors: [], locked: value !== "" }))))
-        .with({ type: "MODE.SET" }, ({ payload }) => set(state, "mode", payload))
-        .with({ type: "CELL.UPDATE" }, update(state))
-        .with({ type: "CELL.SELECT" }, select(state))
-        .with({ type: "CELL.SELECT.MULTI" }, multiSelect(state))
-        .with({ type: "COLOR.SELECT" }, ({ payload }) => set(state, "color", payload))
-        .with({ type: "MOVE" }, ({ payload: { direction } }) => Obj.update(state, "selected", next(direction, state.size)))
-        .with({ type: "CONFIG.STYLES.SELECTION" }, ({ payload }) => Obj.set(state, "styles.selection", payload))
-        .otherwise(() => state)
+    = (state, action) => {
+
+        if (action.type === "UNDO") {
+            if (!state.undo) return state
+
+            return set(state.undo, "redo", state)
+        }
+
+        if (action.type === "REDO") {
+            if (!state.redo) return state
+
+            return set(state.redo, "undo", state)
+        }
+
+        const _next = match(action)
+            .with({ type: "FETCH" }, () => set(state, "status", "fetching"))
+            .with({ type: "GRID.SET" }, ({ payload }) => assign(state, payload))
+            .with({ type: "GRID.INITIALIZE" }, ({ payload }) =>
+                set(state, "grid", M.Functor.map(payload, value =>
+                    ({ value, candidates: [], notes: [], colors: [], locked: value !== "" }))))
+            .with({ type: "MODE.SET" }, ({ payload }) => set(state, "mode", payload))
+            .with({ type: "CELL.UPDATE" }, update(state))
+            .with({ type: "CELL.SELECT" }, select(state))
+            .with({ type: "CELL.SELECT.MULTI" }, multiSelect(state))
+            .with({ type: "COLOR.SELECT" }, ({ payload }) => set(state, "color", payload))
+            .with({ type: "MOVE" }, ({ payload: { direction } }) => Obj.update(state, "selected", next(direction, state.size)))
+            .with({ type: "CONFIG.STYLES.SELECTION" }, ({ payload }) => Obj.set(state, "styles.selection", payload))
+            .otherwise(() => state)
+
+        return set(_next, "undo", state)
+    }
 
 
 const update: StateUpdater<State, "CELL.UPDATE"> = state => ({ payload: { coords, value } }) =>
