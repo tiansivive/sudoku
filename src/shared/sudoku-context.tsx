@@ -29,7 +29,8 @@ export const SudokuContext = createContext<Context>({
     lineOfSight: { row: [], col: [], region: [] },
     regions: [],
     selected: [],
-    dispatch: () => { }
+    dispatch: () => { },
+    styles: { selection: "solid" }
 
 })
 
@@ -45,7 +46,8 @@ export const SudokuProvider: React.FC<Props> = ({ children }) => {
         mode: "value",
         grid: initialGrid(DEFAULT_GRID_SIZE.x),
         size: DEFAULT_GRID_SIZE,
-        selected: []
+        selected: [],
+        styles: { selection: "solid" }
     })
 
 
@@ -84,6 +86,9 @@ export type State = {
     size: Point,
     selected: Point[],
     color?: string,
+    styles: {
+        selection: "solid" | "border"
+    }
 }
 
 
@@ -98,6 +103,7 @@ type Actions = {
     "CELL.HIGHLIGHT": Point,
     "COLOR.SELECT": string,
     "MOVE": { coords: Point, direction: Direction }
+    "CONFIG.STYLES.SELECTION": State["styles"]["selection"]
 }
 
 type ActionMap = {
@@ -122,6 +128,7 @@ const reducer
         .with({ type: "CELL.SELECT.MULTI" }, multiSelect(state))
         .with({ type: "COLOR.SELECT" }, ({ payload }) => set(state, "color", payload))
         .with({ type: "MOVE" }, ({ payload: { direction } }) => Obj.update(state, "selected", next(direction, state.size)))
+        .with({ type: "CONFIG.STYLES.SELECTION" }, ({ payload }) => Obj.set(state, "styles.selection", payload))
         .otherwise(() => state)
 
 
@@ -191,9 +198,6 @@ const toggle = (state: string[], value: string): string[] =>
         .with("", () => state)
         .when(v => state.indexOf(v) === -1, v => state.concat(v).sort(string.Ord.compare))
         .otherwise(v => A.unsafeDeleteAt(state.indexOf(v), state))
-
-
-
 
 
 

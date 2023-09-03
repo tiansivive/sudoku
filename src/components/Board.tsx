@@ -65,6 +65,12 @@ export const Board: React.FC<Props> = ({ size }) => {
                 <Radio value="candidates">Candidates</Radio>
             </Stack>
         </RadioGroup>
+        <RadioGroup onChange={ (payload: State["styles"]["selection"]) => context.dispatch({ type: "CONFIG.STYLES.SELECTION", payload }) } value={ context.styles.selection }>
+            <Stack direction='row'>
+                <Radio value="solid">Solid</Radio>
+                <Radio value="border">Border</Radio>
+            </Stack>
+        </RadioGroup>
         <Grid p="1px" bgColor="indigo" templateColumns={ template(colorbar.length) } templateRows="1fr">
             {
                 colorbar.map((color, i) =>

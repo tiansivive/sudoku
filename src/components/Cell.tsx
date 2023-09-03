@@ -4,7 +4,7 @@ import { Point, Value } from "shared/grid"
 
 import styles from './cell.module.css'
 import { match } from "ts-pattern"
-import { Context, SudokuContext } from "shared/sudoku-context"
+import { Context, State, SudokuContext } from "shared/sudoku-context"
 import classNames from "classnames"
 
 
@@ -48,7 +48,7 @@ export const Cell: React.FC<Props> = ({ value, point, update, move, highlighted,
             cursor="pointer"
 
         >
-            <Box className={ overlay({ highlighted, inLineOfSight, selected, invalid }) } >
+            <Box className={ overlay(context.styles.selection, { highlighted, inLineOfSight, selected, invalid }) } >
 
                 { match(value.value)
                     .with("", () =>
@@ -96,15 +96,23 @@ const select = (context: Context, point: Point) => (e: React.MouseEvent<HTMLDivE
     })
 }
 
-const overlay = (props: Pick<Props, "selected" | "invalid" | "highlighted" | "inLineOfSight">): string => {
-    const _class = match(props)
+const overlay = (mode: State["styles"]["selection"], props: Pick<Props, "selected" | "invalid" | "highlighted" | "inLineOfSight">): string => {
+    const _color = match(props)
         .with({ selected: true }, () => styles.selected)
         .with({ highlighted: true }, () => styles.highlighted)
         .with({ invalid: true }, () => styles.invalid)
         .with({ inLineOfSight: true }, () => styles.lineOfSight)
         .otherwise(() => styles.default)
 
-    return classNames(styles.overlay, _class)
+    const _mode = match(mode)
+        .with("border", () => styles.bordered)
+        .with("solid", () => styles.solid)
+        .exhaustive()
+
+
+
+
+    return classNames(styles.overlay, _mode, _color)
 }
 // const bgColor = (props: Pick<Props, "selected" | "invalid" | "highlighted" | "inLineOfSight">): CSSProperties["backgroundColor"] => {
 //     if (props.selected) return "purple"

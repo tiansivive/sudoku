@@ -2,30 +2,35 @@
     caret-color: transparent;
 }
 
-
-
 .selected {
-    background-color: rgba(128, 0, 128, 0.45);
+    --color: rgba(128, 0, 128, 0.45);
 
 }
 
 .highlighted {
-    background-color: rgba(238, 130, 238, 0.45);
+    --color: rgba(238, 130, 238, 0.45);
 
 }
 
 .invalid {
-    background-color: rgba(220, 20, 60, 0.5);
+    --color: rgba(220, 20, 60, 0.5);
 
 }
 
 .lineOfSight {
-    background-color: rgba(221, 160, 221, 0.35);
-
+    --color: rgba(221, 160, 221, 0.35);
 }
 
 .default {
-    background-color: transparent;
+    --color: transparent;
+}
+
+.bordered {
+    border: 5px solid var(--color);
+}
+
+.solid {
+    background-color: var(--color);
 }
 
 .overlay {
