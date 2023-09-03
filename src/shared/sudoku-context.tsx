@@ -15,9 +15,11 @@ import * as Reg from "sudoku/regions";
 import { LineOfSight, vision } from "sudoku/line-of-sight";
 import { string } from "fp-ts";
 
+import * as ST from 'lib/state/reducer'
+
 
 export type Context = State & {
-    dispatch: React.Dispatch<Action>,
+    dispatch: React.Dispatch<Actions>,
     regions: Region[],
     lineOfSight: LineOfSight,
 }
@@ -41,7 +43,7 @@ type Props = {
 export const SudokuProvider: React.FC<Props> = ({ children }) => {
 
 
-    const [state, dispatch] = useReducer(reducer, {
+    const [state, dispatch] = useReducer(withUndo(reducer), {
         status: "mount",
         mode: "value",
         grid: initialGrid(DEFAULT_GRID_SIZE.x),
@@ -89,12 +91,12 @@ export type State = {
     styles: {
         selection: "solid" | "border"
     },
-    undo?: State
-    redo?: State
+    undo?: Pick<State, "grid" | "selected" | "undo" | "redo">
+    redo?: Pick<State, "grid" | "selected" | "undo" | "redo">
 }
 
 
-type Actions = {
+type ActionTypes = {
     "FETCH": void
     "MODE.SET": State["mode"]
     "GRID.INITIALIZE": Matrix<string>;
@@ -110,31 +112,14 @@ type Actions = {
     "REDO": undefined
 }
 
-type ActionMap = {
-    [K in keyof Actions]: { type: K, payload: Actions[K] }
-}
-type Action = ActionMap[keyof Actions]
-type GetAction<K extends keyof Actions> = ActionMap[K]
 
-type StateUpdater<S, K extends keyof ActionMap> = (state: S) => (action: GetAction<K>) => State
+type Actions = ST.UnionOf<ST.ToStandardReducerAction<ActionTypes>>
 
 const reducer
-    : Reducer<State, Action>
+    : Reducer<State, Actions>
     = (state, action) => {
 
-        if (action.type === "UNDO") {
-            if (!state.undo) return state
-
-            return set(state.undo, "redo", state)
-        }
-
-        if (action.type === "REDO") {
-            if (!state.redo) return state
-
-            return set(state.redo, "undo", state)
-        }
-
-        const _next = match(action)
+        return match(action)
             .with({ type: "FETCH" }, () => set(state, "status", "fetching"))
             .with({ type: "GRID.SET" }, ({ payload }) => assign(state, payload))
             .with({ type: "GRID.INITIALIZE" }, ({ payload }) =>
@@ -149,11 +134,38 @@ const reducer
             .with({ type: "CONFIG.STYLES.SELECTION" }, ({ payload }) => Obj.set(state, "styles.selection", payload))
             .otherwise(() => state)
 
-        return set(_next, "undo", state)
+
     }
 
+const withUndo
+    : (reducer: Reducer<State, Actions>) => Reducer<State, Actions>
+    = reducer => (state, action) => {
+        const st = match(action.type)
+            .with("UNDO", () => {
+                if (!state.undo) return state
+                return F.pipe(
+                    state,
+                    assign(state.undo),
+                    set("redo", Obj.pick(state, ["grid", "selected", "undo", "redo"]))
+                )
+            })
+            .with("REDO", () => {
+                if (!state.redo) return state
+                return F.pipe(
+                    state,
+                    assign(state.redo),
+                    set("undo", Obj.pick(state, ["grid", "selected", "undo", "redo"]))
+                )
+            })
+            .otherwise(() => {
+                const _next = reducer(state, action)
+                return set(_next, "undo", Obj.pick(state, ["grid", "selected", "undo", "redo"]))
+            })
 
-const update: StateUpdater<State, "CELL.UPDATE"> = state => ({ payload: { coords, value } }) =>
+        return st
+    }
+
+const update: ST.StateUpdater<State, ActionTypes, "CELL.UPDATE"> = state => ({ payload: { coords, value } }) =>
     match(state.mode)
         .when(() => Boolean(state.grid[coords.y][coords.x].locked), () => state)
         .with("value", () => fp.set(`grid[${coords.y}][${coords.x}].value`, prune(value), state))
@@ -164,7 +176,7 @@ const update: StateUpdater<State, "CELL.UPDATE"> = state => ({ payload: { coords
 
 
 const select
-    : StateUpdater<State, "CELL.SELECT">
+    : ST.StateUpdater<State, ActionTypes, "CELL.SELECT">
     = state => ({ payload }) => {
         return match(state)
             .with({ selected: [], color: undefined }, () => set(state, "selected", [payload]))
@@ -183,7 +195,7 @@ const select
 
     }
 const multiSelect
-    : StateUpdater<State, "CELL.SELECT.MULTI">
+    : ST.StateUpdater<State, ActionTypes, "CELL.SELECT.MULTI">
     = state => ({ payload }) =>
         match(state)
             .when(

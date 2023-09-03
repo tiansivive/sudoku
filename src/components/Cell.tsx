@@ -114,14 +114,6 @@ const overlay = (mode: State["styles"]["selection"], props: Pick<Props, "selecte
 
     return classNames(styles.overlay, _mode, _color)
 }
-// const bgColor = (props: Pick<Props, "selected" | "invalid" | "highlighted" | "inLineOfSight">): CSSProperties["backgroundColor"] => {
-//     if (props.selected) return "purple"
-//     if (props.invalid) return "darksalmon"
-//     if (props.highlighted) return "violet"
-//     if (props.inLineOfSight) return "plum"
-
-//     return "lavender"
-// }
 
 const textColor = (opts: Pick<Props, "selected" | "invalid"> & { locked?: boolean }) => match(opts)
     .with({ invalid: true }, () => "crimson")
