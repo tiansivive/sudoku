@@ -1,5 +1,5 @@
 import { Reducer, createContext, useEffect, useMemo, useReducer } from "react";
-import { type Matrix, Point, Region, Matrix as M, type Value } from "./grid";
+import { type Matrix, Point, Region, Matrix as M, type Value, point } from "./grid";
 import * as A from 'fp-ts/Array'
 import * as F from 'fp-ts/function'
 import { DEFAULT_GRID_SIZE } from "./settings";
@@ -8,6 +8,7 @@ import { match } from "ts-pattern";
 import { isEqual, last } from "lodash/fp";
 import fp from "lodash/fp";
 import { assign, set } from "lib/objects";
+import * as Obj from "lib/objects";
 import { Direction } from "lib/types";
 import { REGION_SIDE_SIZE } from "components/Board";
 import * as Reg from "sudoku/regions";
@@ -15,7 +16,7 @@ import { LineOfSight, vision } from "sudoku/line-of-sight";
 import { string } from "fp-ts";
 
 
-type Context = State & {
+export type Context = State & {
     dispatch: React.Dispatch<Action>,
     regions: Region[],
     lineOfSight: LineOfSight,
@@ -27,6 +28,7 @@ export const SudokuContext = createContext<Context>({
     size: DEFAULT_GRID_SIZE,
     lineOfSight: { row: [], col: [], region: [] },
     regions: [],
+    selected: [],
     dispatch: () => { }
 
 })
@@ -42,7 +44,8 @@ export const SudokuProvider: React.FC<Props> = ({ children }) => {
         status: "mount",
         mode: "value",
         grid: initialGrid(DEFAULT_GRID_SIZE.x),
-        size: DEFAULT_GRID_SIZE
+        size: DEFAULT_GRID_SIZE,
+        selected: []
     })
 
 
@@ -79,8 +82,8 @@ export type State = {
     mode: "value" | "notes" | "candidates" | "coloring"
     grid: Matrix<Value>,
     size: Point,
+    selected: Point[],
     color?: string,
-    selected?: Point,
 }
 
 
@@ -91,6 +94,7 @@ type Actions = {
     "GRID.SET": { status: State["status"], grid: Matrix<Value> }
     "CELL.UPDATE": { value: string, coords: Point }
     "CELL.SELECT": Point,
+    "CELL.SELECT.MULTI": Point,
     "CELL.HIGHLIGHT": Point,
     "COLOR.SELECT": string,
     "MOVE": { coords: Point, direction: Direction }
@@ -115,8 +119,9 @@ const reducer
         .with({ type: "MODE.SET" }, ({ payload }) => set(state, "mode", payload))
         .with({ type: "CELL.UPDATE" }, update(state))
         .with({ type: "CELL.SELECT" }, select(state))
+        .with({ type: "CELL.SELECT.MULTI" }, multiSelect(state))
         .with({ type: "COLOR.SELECT" }, ({ payload }) => set(state, "color", payload))
-        .with({ type: "MOVE" }, ({ payload: { coords, direction } }) => set(state, "selected", next(coords, direction, state.size)))
+        .with({ type: "MOVE" }, ({ payload: { direction } }) => Obj.update(state, "selected", next(direction, state.size)))
         .otherwise(() => state)
 
 
@@ -134,24 +139,36 @@ const select
     : StateUpdater<State, "CELL.SELECT">
     = state => ({ payload }) => {
         return match(state)
-            .with({ selected: undefined, color: undefined }, () => set(state, "selected", payload))
-            .when(({ selected, color }) => !selected && Boolean(color), () => F.pipe(
+            .with({ selected: [], color: undefined }, () => set(state, "selected", [payload]))
+            .when(({ selected, color }) => A.isEmpty(selected) && Boolean(color), () => F.pipe(
                 state,
-                set("selected", payload),
+                set("selected", [payload]),
                 fp.set(`grid[${payload.y}][${payload.x}].colors`, [state.color])
             ) as State)
-            .when(({ selected, color }) => selected && isEqual(payload, selected) && Boolean(color), () => F.pipe(
+            .when(({ selected, color }) => isEqual([payload], selected) && Boolean(color), () => F.pipe(
                 state,
-                set("selected", undefined),
+                set("selected", []),
                 fp.set(`grid[${payload.y}][${payload.x}].colors`, [state.color])
             ) as State)
-            .otherwise(() => set(state, "selected", payload))
+            .otherwise(() => set(state, "selected", [payload]))
 
 
     }
+const multiSelect
+    : StateUpdater<State, "CELL.SELECT.MULTI">
+    = state => ({ payload }) =>
+        match(state)
+            .when(
+                ({ selected }) => A.elem(point.Eq)(payload, selected),
+                st => Obj.update(st, "selected", A.filter<Point>(p => point.Eq.equals(p, payload))))
+            .otherwise(st => Obj.update(st, "selected", A.append(payload)))
 
 
-const next = (p: Point, direction: Direction, size: Point): Point => {
+
+
+
+
+const next = (direction: Direction, size: Point) => A.map<Point, Point>(p => {
     const newX = match(direction)
         .with("left", () => p.x - 1)
         .with("right", () => p.x + 1)
@@ -165,7 +182,8 @@ const next = (p: Point, direction: Direction, size: Point): Point => {
         x: newX < 0 ? newX + size.x : newX,
         y: newY < 0 ? newY + size.y : newY,
     }
-}
+})
+
 
 const prune = (value: string) => last(value.trim().split("")) || ""
 const toggle = (state: string[], value: string): string[] =>

@@ -9,7 +9,7 @@ export const valid = <T>(eq: Eq<T>, monoid: Monoid<T>) => (grid: Matrix<T>, regi
     const elem = grid[p.y][p.x]
     if (eq.equals(monoid.empty, elem)) return true
 
-    const { region, row, col } = vision(grid, regions)(p)
+    const { region, row, col } = vision(grid, regions)([p])
     const _rowValues = row.map(p => grid[p.y][p.x])
     const _colValues = col.map(p => grid[p.y][p.x])
     const _regionValues = region.map(p => grid[p.y][p.x])

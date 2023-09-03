@@ -9,15 +9,15 @@ export type LineOfSight = {
     region: Region;
 }
 
-export const vision = <T>(grid: Matrix<T>, regions: Region[]) => (p: Point): LineOfSight => {
+export const vision = <T>(grid: Matrix<T>, regions: Region[]) =>
+    A.reduce<Point, LineOfSight>({ row: [], col: [], region: [] }, (los, p) => {
+        const row = grid[p.y].map((_, x) => ({ x, y: p.y }))
+        const col = grid.map(A.findFirst(i => i === p.x)).map((_, y) => ({ x: p.x, y }))
+        const region = findRegion(regions)(p) || []
 
-    const row = grid[p.y].map((_, x) => ({ x, y: p.y }))
-    const col = grid.map(A.findFirst(i => i === p.x)).map((_, y) => ({ x: p.x, y }))
-    const region = findRegion(regions)(p) || []
+        return { row: los.row.concat(row), col: los.col.concat(col), region: los.region.concat(region) }
+    })
 
-    return { row, col, region }
-
-}
 
 
 export const findRegion = (regions: Region[]) => (p: Point) => {

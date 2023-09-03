@@ -4,7 +4,7 @@ import { Point, Value } from "shared/grid"
 
 import styles from './cell.module.css'
 import { match } from "ts-pattern"
-import { SudokuContext } from "shared/sudoku-context"
+import { Context, SudokuContext } from "shared/sudoku-context"
 import classNames from "classnames"
 
 
@@ -14,7 +14,6 @@ type Props = {
     value: Value,
     point: Point,
     update: (val: string) => void,
-    select: () => void,
     selected?: boolean,
     highlighted?: boolean,
     invalid?: boolean,
@@ -23,7 +22,7 @@ type Props = {
 }
 
 
-export const Cell: React.FC<Props> = ({ value, point, update, move, highlighted, select, selected, invalid, inLineOfSight }) => {
+export const Cell: React.FC<Props> = ({ value, point, update, move, highlighted, selected, invalid, inLineOfSight }) => {
 
 
     const context = useContext(SudokuContext)
@@ -45,7 +44,7 @@ export const Cell: React.FC<Props> = ({ value, point, update, move, highlighted,
             justifyContent="center"
             h="64px"
             w="64px"
-            onClick={ select }
+            onClick={ select(context, point) }
             cursor="pointer"
 
         >
@@ -88,6 +87,15 @@ export const Cell: React.FC<Props> = ({ value, point, update, move, highlighted,
 }
 
 
+
+const select = (context: Context, point: Point) => (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+
+    context.dispatch({
+        type: e.getModifierState("Shift") ? "CELL.SELECT.MULTI" : "CELL.SELECT",
+        payload: point
+    })
+}
+
 const overlay = (props: Pick<Props, "selected" | "invalid" | "highlighted" | "inLineOfSight">): string => {
     const _class = match(props)
         .with({ selected: true }, () => styles.selected)
@@ -119,5 +127,6 @@ const direction = (move: Props["move"]) => (e: React.KeyboardEvent<HTMLInputElem
         .with("ArrowDown", () => { e.preventDefault(); move("down") })
         .with("ArrowLeft", () => { e.preventDefault(); move("left") })
         .with("ArrowRight", () => { e.preventDefault(); move("right") })
+
 
 

@@ -48,9 +48,9 @@ export const Board: React.FC<Props> = ({ size }) => {
                             point={ { x, y } }
                             update={ value => context.dispatch({ type: "CELL.UPDATE", payload: { value, coords: { x, y } } }) }
                             move={ direction => context.dispatch({ type: "MOVE", payload: { direction, coords: { x, y } } }) }
-                            select={ () => context.dispatch({ type: "CELL.SELECT", payload: { x, y } }) }
-                            highlighted={ selected(context)({ x, y }) }
-                            selected={ active({ x, y }, context.selected) }
+
+                            highlighted={ highlighted(context)({ x, y }) }
+                            selected={ isSelected({ x, y }, context.selected) }
                             invalid={ !valid(context.grid, context.regions)({ x, y }) }
                             inLineOfSight={ inLineOfSight(context.lineOfSight)({ x, y }) }
                         />
@@ -112,18 +112,18 @@ const includes = A.elem(point.Eq)
 const inLineOfSight = ({ row, col, region }: LineOfSight) => (p: Point) =>
     includes(p, col) || includes(p, row) || includes(p, region)
 
-const selected = ({ selected, grid }: State) => (p: Point) => {
-    if (!selected) return false
-    if (point.Eq.equals(selected, p)) return true
+const highlighted = ({ selected, grid }: State) => (p: Point) => {
+    if (A.isEmpty(selected)) return false
+    if (isSelected(p, selected)) return true
 
-    const selectedVal = grid[selected.y][selected.x]
     const currentVal = grid[p.y][p.x]
-
     if (currentVal.value === "") return false
 
-    return V.Eq.equals(selectedVal, currentVal)
+    const selectedVals = selected.map(({ x, y }) => grid[y][x])
+
+    return A.elem(V.Eq)(currentVal, selectedVals)
 }
 
-const active = (p: Point, selected: Point | undefined) => selected && point.Eq.equals(p, selected)
 
+const isSelected = A.elem(point.Eq)
 
