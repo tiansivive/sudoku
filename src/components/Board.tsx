@@ -49,8 +49,8 @@ export const Board: React.FC<Props> = ({ size }) => {
                             update={ value => context.dispatch({ type: "CELL.UPDATE", payload: { value, coords: { x, y } } }) }
                             move={ direction => context.dispatch({ type: "MOVE", payload: { direction, coords: { x, y } } }) }
                             select={ () => context.dispatch({ type: "CELL.SELECT", payload: { x, y } }) }
-                            selected={ selected(context)({ x, y }) }
-                            active={ active({ x, y }, context.selected) }
+                            highlighted={ selected(context)({ x, y }) }
+                            selected={ active({ x, y }, context.selected) }
                             invalid={ !valid(context.grid, context.regions)({ x, y }) }
                             inLineOfSight={ inLineOfSight(context.lineOfSight)({ x, y }) }
                         />
@@ -69,6 +69,7 @@ export const Board: React.FC<Props> = ({ size }) => {
             {
                 colorbar.map((color, i) =>
                     <GridItem
+                        key={ color }
                         gridColumnStart={ i * 2 + 1 }
                         bgColor={ color }
                         h="64px"

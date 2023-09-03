@@ -1,3 +1,46 @@
 .noCaret {
     caret-color: transparent;
 }
+
+
+
+.selected {
+    background-color: rgba(128, 0, 128, 0.45);
+
+}
+
+.highlighted {
+    background-color: rgba(238, 130, 238, 0.45);
+
+}
+
+.invalid {
+    background-color: rgba(220, 20, 60, 0.5);
+
+}
+
+.lineOfSight {
+    background-color: rgba(221, 160, 221, 0.35);
+
+}
+
+.default {
+    background-color: transparent;
+}
+
+.overlay {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+}
+
+.cell {
+    position: relative;
+    background-color: lavender;
+}

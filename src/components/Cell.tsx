@@ -1,10 +1,11 @@
-import { GridItem, Input } from "@chakra-ui/react"
-import { CSSProperties, useContext, useEffect, useRef } from "react"
+import { Box, GridItem, Input } from "@chakra-ui/react"
+import { useContext, useEffect, useRef } from "react"
 import { Point, Value } from "shared/grid"
 
 import styles from './cell.module.css'
 import { match } from "ts-pattern"
 import { SudokuContext } from "shared/sudoku-context"
+import classNames from "classnames"
 
 
 
@@ -15,29 +16,30 @@ type Props = {
     update: (val: string) => void,
     select: () => void,
     selected?: boolean,
-    active?: boolean,
+    highlighted?: boolean,
     invalid?: boolean,
     inLineOfSight?: boolean,
     move: (direction: "up" | "down" | "left" | "right") => void
 }
 
 
-export const Cell: React.FC<Props> = ({ value, point, update, move, active, select, selected, invalid, inLineOfSight }) => {
+export const Cell: React.FC<Props> = ({ value, point, update, move, highlighted, select, selected, invalid, inLineOfSight }) => {
 
 
     const context = useContext(SudokuContext)
     const ref = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
-        if (active) ref.current?.focus()
-    }, [active, context.mode])
+        if (selected) ref.current?.focus()
+    }, [selected, context.mode])
     return (
         <GridItem
             gridColumnStart={ point.x * 2 + 1 }
             gridRowStart={ point.y * 2 + 1 }
-            border={ active ? "3px solid" : "none" }
-            borderColor={ active ? "lightpink" : "purple.500" }
-            bgColor={ value.colors[0] || bgColor({ selected, invalid, inLineOfSight, active }) }
+            // border={ active ? "3px solid" : "none" }
+            // borderColor={ active ? "lightpink" : "purple.500" }
+            className={ styles.cell }
+            bgColor={ value.colors[0] }
             display="flex"
             alignItems="center"
             justifyContent="center"
@@ -45,55 +47,69 @@ export const Cell: React.FC<Props> = ({ value, point, update, move, active, sele
             w="64px"
             onClick={ select }
             cursor="pointer"
+
         >
-            { match(value.value)
-                .with("", () =>
-                    <Input
-                        className={ styles.noCaret }
-                        cursor="pointer"
-                        color={ active ? "lightpink" : "purple.500" }
-                        fontSize="lg"
-                        variant='unstyled'
-                        value={ value.candidates.join("") }
-                        textAlign="center"
-                        onChange={ e => update(e.target.value) }
-                        ref={ ref }
-                        onKeyDown={ direction(move) }
+            <Box className={ overlay({ highlighted, inLineOfSight, selected, invalid }) } >
 
-                    />)
-                .otherwise(() =>
-                    <Input
-                        className={ styles.noCaret }
-                        cursor="pointer"
+                { match(value.value)
+                    .with("", () =>
+                        <Input
+                            className={ styles.noCaret }
+                            cursor="pointer"
+                            color={ selected ? "lightpink" : "purple.500" }
+                            fontSize="lg"
+                            variant='unstyled'
+                            value={ value.candidates.join("") }
+                            textAlign="center"
+                            onChange={ e => update(e.target.value) }
+                            ref={ ref }
+                            onKeyDown={ direction(move) }
 
-                        color={ textColor({ active, invalid, locked: value.locked }) }
-                        fontSize="5xl"
-                        variant='unstyled'
-                        value={ value.value }
-                        textAlign="center"
-                        onChange={ e => update(e.target.value) }
-                        ref={ ref }
-                        onKeyDown={ direction(move) }
+                        />)
+                    .otherwise(() =>
+                        <Input
+                            className={ styles.noCaret }
+                            cursor="pointer"
 
-                    />)
-            }
+                            color={ textColor({ selected, invalid, locked: value.locked }) }
+                            fontSize="5xl"
+                            variant='unstyled'
+                            value={ value.value }
+                            textAlign="center"
+                            onChange={ e => update(e.target.value) }
+                            ref={ ref }
+                            onKeyDown={ direction(move) }
+
+                        />)
+                }
+            </Box>
         </GridItem>
     )
 }
 
 
-const bgColor = (props: Pick<Props, "active" | "invalid" | "selected" | "inLineOfSight">): CSSProperties["backgroundColor"] => {
-    if (props.active) return "purple"
-    if (props.invalid) return "darksalmon"
-    if (props.selected) return "violet"
-    if (props.inLineOfSight) return "plum"
+const overlay = (props: Pick<Props, "selected" | "invalid" | "highlighted" | "inLineOfSight">): string => {
+    const _class = match(props)
+        .with({ selected: true }, () => styles.selected)
+        .with({ highlighted: true }, () => styles.highlighted)
+        .with({ invalid: true }, () => styles.invalid)
+        .with({ inLineOfSight: true }, () => styles.lineOfSight)
+        .otherwise(() => styles.default)
 
-    return "lavender"
+    return classNames(styles.overlay, _class)
 }
+// const bgColor = (props: Pick<Props, "selected" | "invalid" | "highlighted" | "inLineOfSight">): CSSProperties["backgroundColor"] => {
+//     if (props.selected) return "purple"
+//     if (props.invalid) return "darksalmon"
+//     if (props.highlighted) return "violet"
+//     if (props.inLineOfSight) return "plum"
 
-const textColor = (opts: Pick<Props, "active" | "invalid"> & { locked?: boolean }) => match(opts)
+//     return "lavender"
+// }
+
+const textColor = (opts: Pick<Props, "selected" | "invalid"> & { locked?: boolean }) => match(opts)
     .with({ invalid: true }, () => "crimson")
-    .with({ active: true }, () => "lightpink")
+    .with({ selected: true }, () => "lightpink")
     .with({ locked: true }, () => "darkslateblue")
     .otherwise(() => "purple.500")
 
