@@ -4,9 +4,11 @@ import { ChakraProvider } from '@chakra-ui/react'
 import { Board } from 'components/Board'
 import { SudokuProvider } from 'shared/sudoku-context'
 
+import plProg from "./sudoku/solve.pl?raw"
+
 
 function App() {
-
+  console.log(plProg)
   return (
     <ChakraProvider>
       <SudokuProvider>

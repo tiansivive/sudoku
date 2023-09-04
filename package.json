@@ -19,6 +19,7 @@
     "lodash": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "tau-prolog": "^0.3.4",
     "ts-pattern": "^5.0.5",
     "type-fest": "^4.3.1"
   },
